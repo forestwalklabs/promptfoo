@@ -278,6 +278,9 @@ export interface GradingResult {
   // Plain text reason for the result
   reason: string;
 
+  // Raw output from the provider
+  rawOutput?: string | null;
+
   // Map of labeled metrics to values
   namedScores?: Record<string, number>;
 
@@ -311,6 +314,7 @@ export function isGradingResult(result: any): result is GradingResult {
     typeof result.pass === 'boolean' &&
     typeof result.score === 'number' &&
     typeof result.reason === 'string' &&
+    (typeof result.rawOutput === 'undefined' || typeof result.rawOutput === 'string') &&
     (typeof result.namedScores === 'undefined' || typeof result.namedScores === 'object') &&
     (typeof result.tokensUsed === 'undefined' || typeof result.tokensUsed === 'object') &&
     (typeof result.componentResults === 'undefined' || Array.isArray(result.componentResults)) &&
