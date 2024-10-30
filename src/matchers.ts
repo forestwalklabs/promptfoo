@@ -407,6 +407,7 @@ export async function matchesLlmRubric(
       pass,
       score: parsed.score ?? (pass ? 1.0 : 0.0),
       reason: parsed.reason || (pass ? 'Grading passed' : 'Grading failed'),
+      rawOutput: resp.output,
       tokensUsed: {
         total: resp.tokenUsage?.total || 0,
         prompt: resp.tokenUsage?.prompt || 0,
@@ -418,6 +419,7 @@ export async function matchesLlmRubric(
     return fail(
       `llm-rubric produced malformed response: ${err}\n\n${resp.output}`,
       resp.tokenUsage,
+      resp.output,
     );
   }
 }
@@ -452,7 +454,7 @@ export async function matchesFactuality(
   );
   const resp = await finalProvider.callApi(prompt);
   if (resp.error || !resp.output) {
-    return fail(resp.error || 'No output', resp.tokenUsage);
+    return fail(resp.error || 'No output', resp.tokenUsage, resp.output);
   }
 
   invariant(typeof resp.output === 'string', 'factuality produced malformed response');
@@ -464,6 +466,7 @@ export async function matchesFactuality(
       return fail(
         `Factuality checker output did not match expected format: ${output}`,
         resp.tokenUsage,
+        resp.output,
       );
     }
     const option = answerMatch[1].toUpperCase();
@@ -506,6 +509,7 @@ export async function matchesFactuality(
       pass,
       score,
       reason,
+      rawOutput: resp.output,
       tokensUsed: {
         total: resp.tokenUsage?.total || 0,
         prompt: resp.tokenUsage?.prompt || 0,
@@ -514,7 +518,7 @@ export async function matchesFactuality(
       },
     };
   } catch (err) {
-    return fail(`Error parsing output: ${(err as Error).message}`, resp.tokenUsage);
+    return fail(`Error parsing output: ${(err as Error).message}`, resp.tokenUsage, resp.output);
   }
 }
 
@@ -548,7 +552,7 @@ export async function matchesClosedQa(
   );
   const resp = await finalProvider.callApi(prompt);
   if (resp.error || !resp.output) {
-    return fail(resp.error || 'No output', resp.tokenUsage);
+    return fail(resp.error || 'No output', resp.tokenUsage, resp.output);
   }
 
   invariant(typeof resp.output === 'string', 'model-graded-closedqa produced malformed response');
@@ -566,6 +570,7 @@ export async function matchesClosedQa(
       pass,
       score: pass ? 1 : 0,
       reason,
+      rawOutput: resp.output,
       tokensUsed: {
         total: resp.tokenUsage?.total || 0,
         prompt: resp.tokenUsage?.prompt || 0,
@@ -574,7 +579,7 @@ export async function matchesClosedQa(
       },
     };
   } catch (err) {
-    return fail(`Error parsing output: ${(err as Error).message}`, resp.tokenUsage);
+    return fail(`Error parsing output: ${(err as Error).message}`, resp.tokenUsage, resp.output);
   }
 }
 
@@ -618,7 +623,7 @@ export async function matchesAnswerRelevance(
       tokensUsed.prompt += resp.tokenUsage?.prompt || 0;
       tokensUsed.completion += resp.tokenUsage?.completion || 0;
       tokensUsed.cached += resp.tokenUsage?.cached || 0;
-      return fail(resp.error || 'No output', tokensUsed);
+      return fail(resp.error || 'No output', tokensUsed, resp.output);
     }
 
     invariant(
@@ -702,7 +707,7 @@ export async function matchesContextRecall(
 
   const resp = await textProvider.callApi(promptText);
   if (resp.error || !resp.output) {
-    return fail(resp.error || 'No output', resp.tokenUsage);
+    return fail(resp.error || 'No output', resp.tokenUsage, resp.output);
   }
 
   invariant(typeof resp.output === 'string', 'context-recall produced malformed response');
@@ -719,6 +724,7 @@ export async function matchesContextRecall(
     reason: pass
       ? `Recall ${score.toFixed(2)} is >= ${threshold}`
       : `Recall ${score.toFixed(2)} is < ${threshold}`,
+    rawOutput: resp.output,
     tokensUsed: {
       total: resp.tokenUsage?.total || 0,
       prompt: resp.tokenUsage?.prompt || 0,
@@ -767,6 +773,7 @@ export async function matchesContextRelevance(
     reason: pass
       ? `Relevance ${score.toFixed(2)} is >= ${threshold}`
       : `Relevance ${score.toFixed(2)} is < ${threshold}`,
+    rawOutput: resp.output,
     tokensUsed: {
       total: resp.tokenUsage?.total || 0,
       prompt: resp.tokenUsage?.prompt || 0,
@@ -811,7 +818,7 @@ export async function matchesContextFaithfulness(
 
   let resp = await textProvider.callApi(promptText);
   if (resp.error || !resp.output) {
-    return fail(resp.error || 'No output', resp.tokenUsage);
+    return fail(resp.error || 'No output', resp.tokenUsage, resp.output);
   }
 
   invariant(typeof resp.output === 'string', 'context-faithfulness produced malformed response');
@@ -825,7 +832,7 @@ export async function matchesContextFaithfulness(
 
   resp = await textProvider.callApi(promptText);
   if (resp.error || !resp.output) {
-    return fail(resp.error || 'No output', resp.tokenUsage);
+    return fail(resp.error || 'No output', resp.tokenUsage, resp.output);
   }
 
   invariant(typeof resp.output === 'string', 'context-faithfulness produced malformed response');
@@ -850,6 +857,7 @@ export async function matchesContextFaithfulness(
     reason: pass
       ? `Faithfulness ${score.toFixed(2)} is >= ${threshold}`
       : `Faithfulness ${score.toFixed(2)} is < ${threshold}`,
+    rawOutput: resp.output,
     tokensUsed: {
       total: resp.tokenUsage?.total || 0,
       prompt: resp.tokenUsage?.prompt || 0,
@@ -911,6 +919,7 @@ export async function matchesSelectBest(
         score: 1,
         reason: `Output selected as the best: ${criteria}`,
         tokensUsed,
+        rawOutput: resp.output,
       };
     } else {
       return {
@@ -918,6 +927,7 @@ export async function matchesSelectBest(
         score: 0,
         reason: `Output not selected: ${criteria}`,
         tokensUsed,
+        rawOutput: resp.output,
       };
     }
   });
