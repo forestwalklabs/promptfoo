@@ -395,11 +395,7 @@ export async function matchesLlmRubric(
   try {
     const jsonObjects = extractJsonObjects(resp.output);
     if (jsonObjects.length === 0) {
-      return fail(
-        `Could not extract JSON from llm-rubric response.\n\nRaw output:\n${resp.output}`,
-        resp.tokenUsage,
-        resp.output,
-      );
+      return fail(`Could not extract JSON from llm-rubric response.`, resp.tokenUsage, resp.output);
     }
     const parsed = jsonObjects[0] as Partial<GradingResult>;
     const pass = parsed.pass ?? (typeof parsed.score === 'undefined' ? true : parsed.score > 0);
